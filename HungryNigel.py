@@ -1,4 +1,4 @@
-from pygame import display, time, draw, QUIT, init, KEYDOWN, K_a, K_s, K_d, K_w
+from pygame import display, time, draw, font as pgfont, QUIT, init
 from random import randint
 import pygame
 from numpy import sqrt
@@ -7,20 +7,36 @@ init()
 
 # Initializing game parameters
 
-speed = 10  # Game speed
+speed = 12  # Game speed
 
-width = 600  # Window width
-height = 600  # Window height
-cols = 50  # Columns in in window
-rows = 50  # Rows in in window
-wr = width/cols  # Cell width
-hr = height/rows  # Cell height
+width = 600  # Board width
+board_height = 600  # Board height
+panel_height = 44  # Score panel height
+height = board_height + panel_height  # Window height
+cols = 50  # Columns in the board
+rows = 50  # Rows in the board
+wr = width / cols  # Cell width
+hr = board_height / rows  # Cell height
 
-direction = 1
+# Colour palette
+BG_COLOR = (18, 19, 28)
+GRID_COLOR = (30, 31, 46)
+BLOCK_COLOR = (72, 74, 94)
+BLOCK_HIGHLIGHT = (96, 98, 122)
+SNAKE_BODY_COLOR = (0, 200, 132)
+SNAKE_BODY_SHADE = (0, 150, 100)
+SNAKE_HEAD_COLOR = (255, 209, 102)
+FOOD_COLOR = (255, 71, 87)
+FOOD_GLOW = (120, 30, 40)
+PANEL_COLOR = (12, 13, 20)
+TEXT_COLOR = (230, 230, 240)
+ACCENT_COLOR = (0, 200, 132)
 
 screen = display.set_mode([width, height])
-display.set_caption("HUNGRY NIGEL")
+display.set_caption("HUNGRY NIGEL - Self-Playing Snake")
 clock = time.Clock()
+score_font = pgfont.SysFont("Consolas", 22, bold=True)
+title_font = pgfont.SysFont("Consolas", 22, bold=True)
 
 
 def getpath(food1, snake1):
@@ -81,8 +97,8 @@ class Spot:
         if randint(1, 600) < 8:
             self.block = True
 
-    def show(self, color):
-        draw.rect(screen, color, [self.x*hr+2, self.y*wr+2, hr-4, wr-4])
+    def show(self, color, radius=4):
+        draw.rect(screen, color, [self.x * hr + 2, self.y * wr + 2, hr - 4, wr - 4], border_radius=radius)
 
     def add_neighbors(self):
         if self.x > 0:
@@ -93,6 +109,25 @@ class Spot:
             self.neighbors.append(grid[self.x + 1][self.y])
         if self.y < cols - 1:
             self.neighbors.append(grid[self.x][self.y + 1])
+
+
+def draw_grid():
+    for i in range(cols + 1):
+        x = i * wr
+        draw.line(screen, GRID_COLOR, (x, 0), (x, board_height))
+    for j in range(rows + 1):
+        y = j * hr
+        draw.line(screen, GRID_COLOR, (0, y), (width, y))
+
+
+def draw_panel(length):
+    draw.rect(screen, PANEL_COLOR, [0, board_height, width, panel_height])
+    draw.line(screen, ACCENT_COLOR, (0, board_height), (width, board_height), 2)
+    title_surface = title_font.render("HUNGRY NIGEL", True, ACCENT_COLOR)
+    screen.blit(title_surface, (16, board_height + (panel_height - title_surface.get_height()) // 2))
+    score_surface = score_font.render(f"Length: {length}", True, TEXT_COLOR)
+    screen.blit(score_surface, (width - score_surface.get_width() - 16,
+                                 board_height + (panel_height - score_surface.get_height()) // 2))
 
 
 grid = [[Spot(i, j) for j in range(cols)] for i in range(rows)]
@@ -111,7 +146,9 @@ flag = False
 
 while not flag:
     clock.tick(speed)
-    screen.fill((230, 230, 250))
+    screen.fill(BG_COLOR)
+    draw_grid()
+
     direction = dir_array.pop(-1)
     if direction == 0:    # down
         snake.append(grid[current.x][current.y + 1])
@@ -133,25 +170,20 @@ while not flag:
     else:
         snake.pop(0)
 
-    for spot in snake:
-        spot.show((255, 0, 255))
     for i in range(rows):
         for j in range(cols):
             if grid[i][j].block:
-                grid[i][j].show((18, 18, 18))
+                grid[i][j].show(BLOCK_COLOR, radius=2)
 
-    food.show((3, 168, 158))
-    snake[-1].show((255, 69, 0))
+    for spot in snake[:-1]:
+        spot.show(SNAKE_BODY_COLOR, radius=6)
+    snake[-1].show(SNAKE_HEAD_COLOR, radius=8)
+
+    food.show(FOOD_COLOR, radius=10)
+
+    draw_panel(len(snake))
+
     display.flip()
     for event in pygame.event.get():
         if event.type == QUIT:
             flag = True
-        elif event.type == KEYDOWN:
-            if event.key == K_w and not direction == 0:
-                direction = 2
-            elif event.key == K_a and not direction == 1:
-                direction = 3
-            elif event.key == K_s and not direction == 2:
-                direction = 0
-            elif event.key == K_d and not direction == 3:
-                direction = 1
