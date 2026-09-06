@@ -4,6 +4,10 @@ A self-playing Snake game. Instead of a human player, an A* pathfinding
 algorithm controls the snake, plotting the shortest safe route to the food
 on every step.
 
+## Screenshots
+
+![Hungry Nigel gameplay](Screenshots/gameplay.png)
+
 ## How it works
 
 - The board is a 50x50 grid rendered in a 600x600 pygame window, with a
